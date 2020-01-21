@@ -36,18 +36,24 @@ game.forEach((row)=>{
 document.body.appendChild(displayGame)
 
 
-let move = 'down'
+let move = null
 
-snake = {
-    head: {x:0,y:3},
-    tail: {x:0,y:0},
-    position: [
-        {x:0,y:0},
-        {x:0,y:1},
-        {x:0,y:2},
-        {x:0,y:3}
-    ]
+let snake;
+
+initialiseSnake = ()=>{
+    snake = {
+        head: {x:0,y:4},
+        tail: {x:0,y:0},
+        position: [
+            {x:0,y:0},
+            {x:0,y:1},
+            {x:0,y:2},
+            {x:0,y:3},
+            {x:0,y:4}
+        ]
+    }
 }
+
 
 let blocks = document.getElementsByClassName('block');
 
@@ -65,7 +71,6 @@ getNewPosition = (pos)=>{
     
     let {x,y} = pos
     let {move} = game[x][y]
-    game[x][y].value = false
 
 
     if(move === 'right'){
@@ -92,36 +97,111 @@ displaySnakePosition = (snake)=>{
     })
 }
 
+hideSnakePosition = (snake)=>{
+    snake.position.forEach((pos)=>{
+        // displayPos(pos)
+        let {x,y} = pos
+        game[x][y].value = false
+        blocks[x*cols + y].style.backgroundColor = 'white'
+    })
+}
+
+let movement = null;
+
+startMovement = ()=>{
+    movement = setInterval(function(){ updateSnakePosition() }, 100);
+}
+
 initialiseGame = ()=>{
+    initialiseSnake()
     snake.position.forEach((pos)=>{
         let {x,y} = pos;
         game[x][y].value = true
         game[x][y].move = 'right'
     })
+    move = null
+    displaySnakePosition(snake)
+    startMovement()
+}
+
+gameover = ()=>{
+    clearInterval(movement)
+    hideSnakePosition(snake)
+    alert('game over')
+    initialiseGame()
+}
+
+checkValidMove = ()=>{
+    
+    console.log('check valid move')
+
+    // new position of head
+    let {x,y} = getNewPosition(snake.head);
+    
+
+    if(x >= rows || x < 0 || y >= cols || y < 0){
+        gameover()
+        return false
+    }
+
+    if(game[x][y].value === true){
+        gameover()
+        return false
+    }
+
+    return true
+
 }
 
 initialiseGame()
 
-displaySnakePosition(snake)
+// displaySnakePosition(snake)
 
 updateSnakePosition = ()=>{
     
+    if(!move)
+        return
+
     hidePos(snake.tail)
 
-    console.log('before',snake)
+    // console.log('before',snake)
+
 
     // update move at head
     let {x,y} = snake.head
     game[x][y].move = move
 
+
+    if(!checkValidMove())
+        return
+
+
     let new_pos = []
 
     snake.position.forEach((pos)=>{
 
-        new_pos.push(getNewPosition(pos))
+        console.log('updating game')
 
+        var {x,y} = pos;
+
+        // old position
+        game[x][y].value = false
+
+        let new_ = getNewPosition(pos)
+
+        // game[new_.x][new_.y].value = true
+
+        new_pos.push(new_)
+
+        console.log('updated position',new_.x,new_.y)
     })
 
+    new_pos.forEach((pos)=>{
+        let {x,y} = pos
+        game[x][y].value = true
+        console.log('at x , y = ',x,y,'value = ',game[x][y].value)
+    })
+    
     snake.position = new_pos;
 
     //update tail and head
@@ -129,12 +209,37 @@ updateSnakePosition = ()=>{
     snake.tail = getNewPosition(snake.tail)
     snake.head = getNewPosition(snake.head)
 
-    console.log('after',snake)
+    // console.log('after',snake)
     
     displaySnakePosition(snake)
 }
 
-// setInterval(console.log('ha'),1000)
-setInterval(function(){ updateSnakePosition() }, 3000);
+document.onkeydown = checkKey;
 
-updateSnakePosition()
+function checkKey(e) {
+
+    e = e || window.event;
+
+    if (e.keyCode == '38') {
+        // up arrow
+        move = 'up'
+    }
+    else if (e.keyCode == '40') {
+        // down arrow
+        move = 'down'
+    }
+    else if (e.keyCode == '37') {
+       // left arrow
+       move = 'left'
+    }
+    else if (e.keyCode == '39') {
+       // right arrow
+       move = 'right'
+    }
+
+}
+
+
+// setInterval(console.log('ha'),1000)
+
+// updateSnakePosition()
